@@ -46,6 +46,29 @@
 
 ;;; Lifecycle methods
 
+(defparameter +startup-code+
+  (list
+   "var RemoteDOM = {}"
+   "RemoteDOM.root = document.createElement('div')"
+   "document.body.appendChild(RemoteDOM.root)"
+   "RemoteDOM.nodes = {}"
+   "RemoteDOM.registerNode = function(id, name) {
+  RemoteDOM.nodes[id] = document.createElement(name)
+}"
+   "RemoteDOM.registerTextNode = function(id, text) {
+  RemoteDOM.nodes[id] = document.CreateTextNode(text)
+}"
+   "RemoteDOM.prependChild = function(parent_id, child_id) {
+  var parent = RemoteDOM.nodes[parent_id];
+  var child = RemoteDOM.nodes[child_id];
+  parent.insertBefore(child, parent.childNodes[0]);
+}"
+   "RemoteDOM.appendChild = function(parent_id, child_id) {
+  var parent = RemoteDOM.nodes[parent_id];
+  var child = RemoteDOM.nodes[child_id];
+  parent.appendChild(child);
+}"))
+
 (defgeneric start (document)
   (:documentation "Start the remote document.")
 
@@ -54,10 +77,7 @@
       ;; Start the server
       (remote-js:start context)
       ;; Create some client-side stuff
-      (dolist (str (list "var RemoteDOM = {}"
-                         "RemoteDOM.root = document.createElement('div')"
-                         "document.body.appendChild(RemoteDOM.root)"
-                         "RemoteDOM.nodes = {}"))
+      (dolist (str +startup-code+)
         (remote-js:eval context str)))))
 
 (defgeneric stop (document)
@@ -86,37 +106,53 @@
   (with-slots (ids) document
     (remhash node ids)))
 
-;;; Document API
+(defun node-id (document node)
+  "Find the ID of a node in a document object. Raise an error if it's not
+found."
+  (with-slots (ids) document
+    (or (gethash node ids) (error "Node not found in the document."))))
 
-(defun js-make-node (document id name)
-  "Create a node in the client."
-  (declare (type integer id)
-           (type string name))
-  (js-eval document
-           (format nil "RemoteDOM.nodes[~D] = document.createElement(~S)"
-                   id name)))
+;;; Document API
 
 (defun doc-make-node (document parent name &key attributes)
   "Create a node in a document and the client."
   (declare (type string name))
   (let ((node (plump-dom:make-element parent name :attributes attributes)))
-    (js-make-node document (register-node document node) name)
+    ;; Client-side
+    (js-eval document
+             (format nil "RemoteDOM.registerNode(~D, ~A)"
+                     (register-node document node) name))
     node))
-
-(defun js-make-text-node (document id text)
-  "Create a text node in the client."
-  (declare (type integer id)
-           (type string text))
-  (js-eval document
-           (format nil "RemoteDOM.nodes[~D] = document.createTextNode(~S)"
-                   id text)))
 
 (defun doc-make-text-node (document parent text)
   "Create a text node in a document and the client."
   (declare (type string text))
   (let ((node (plump-dom:make-text-node parent text)))
-    (js-make-text-node document (register-node document node) text)
+    ;; Client-side
+    (js-eval document
+             (format nil "RemoteDOM.registerTextNode(~D, ~A)"
+                     (register-node document node) text))
     node))
+
+(defun doc-prepend-child (document parent child)
+  "Prepend a child node to a parent node."
+  ;; Server
+  (plump-dom:prepend-child parent child)
+  ;; Client side
+  (js-eval document
+           (format nil "RemoteDOM.prependChild(~D, ~D)"
+                   (node-id document parent)
+                   (node-id document child))))
+
+(defun doc-append-child (document parent child)
+  "Append a child node to a parent node."
+  ;; Server
+  (plump-dom:append-child parent child)
+  ;; Client side
+  (js-eval document
+           (format nil "RemoteDOM.appendChild(~D, ~D)"
+                   (node-id document parent)
+                   (node-id document child))))
 
 ;;; DOM API
 
