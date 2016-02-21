@@ -11,7 +11,8 @@
   :components ((:module "src"
                 :serial t
                 :components
-                ((:file "remote-dom"))))
+                ((:static-file "startup.js")
+                 (:file "remote-dom"))))
   :description "Control a browser DOM from Common Lisp."
   :long-description
   #.(uiop:read-file-string
