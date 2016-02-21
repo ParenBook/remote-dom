@@ -167,3 +167,11 @@ found."
   "Create a text node."
   (declare (type string text))
   (doc-make-text-node *document* parent text))
+
+(defun prepend-child (parent child)
+  "Add a node to the beginning of the parent's children."
+  (doc-prepend-child *document* parent child))
+
+(defun append-child (parent child)
+  "Add a node to the end of the paretn's children."
+  (doc-append-child *document* parent child))
