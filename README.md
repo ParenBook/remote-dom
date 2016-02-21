@@ -37,7 +37,7 @@ client to our DOM:
   (write-string (remote-js:html (remote-dom::document-context doc)) stream))
 ```
 
-Now, open `~/test.html~`. Then run this:
+Now, open `~/test.html`. Then run this:
 
 ```lisp
 (let* ((remote-dom:*document* doc)
