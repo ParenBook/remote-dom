@@ -57,27 +57,7 @@
 ;;; Lifecycle methods
 
 (defparameter +startup-code+
-  (list
-   "var RemoteDOM = {}"
-   "RemoteDOM.root = document.createElement('div')"
-   "document.body.appendChild(RemoteDOM.root)"
-   "RemoteDOM.nodes = {}"
-   "RemoteDOM.registerNode = function(id, name) {
-  RemoteDOM.nodes[id] = document.createElement(name)
-}"
-   "RemoteDOM.registerTextNode = function(id, text) {
-  RemoteDOM.nodes[id] = document.CreateTextNode(text)
-}"
-   "RemoteDOM.prependChild = function(parent_id, child_id) {
-  var parent = RemoteDOM.nodes[parent_id];
-  var child = RemoteDOM.nodes[child_id];
-  parent.insertBefore(child, parent.childNodes[0]);
-}"
-   "RemoteDOM.appendChild = function(parent_id, child_id) {
-  var parent = RemoteDOM.nodes[parent_id];
-  var child = RemoteDOM.nodes[child_id];
-  parent.appendChild(child);
-}"))
+  #.(uiop:read-file-string (asdf:system-relative-pathname :remote-dom #p"src/startup.js")))
 
 (defgeneric start (document)
   (:documentation "Start the remote document.")
@@ -87,8 +67,8 @@
       ;; Start the server
       (remote-js:start context)
       ;; Create some client-side stuff
-      (dolist (str +startup-code+)
-        (remote-js:eval context str)))))
+      (js-eval document +startup-code+)
+      t)))
 
 (defgeneric stop (document)
   (:documentation "Stop the remote document.")
