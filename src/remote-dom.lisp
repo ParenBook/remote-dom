@@ -44,7 +44,10 @@
     (setf context (remote-js:make-buffered-context
                    :callback #'(lambda (message)
                                  (declare (ignore message))
-                                 nil)))))
+                                 nil))))
+  (with-slots (id ids) document
+    ;; Assign an ID to the root object
+    (setf (gethash (document-root document) ids) (incf id))))
 
 ;;; Document utilities
 
@@ -110,8 +113,10 @@ found."
   (let ((node (plump-dom:make-element parent name :attributes attributes)))
     ;; Client-side
     (js-eval document
-             (format nil "RemoteDOM.registerNode(~D, ~S)"
-                     (register-node document node) name))
+             (format nil "RemoteDOM.registerNode(~D, ~D, ~S)"
+                     (register-node document node)
+                     (node-id document parent)
+                     name))
     node))
 
 (defun doc-make-text-node (document parent text)
@@ -120,8 +125,10 @@ found."
   (let ((node (plump-dom:make-text-node parent text)))
     ;; Client-side
     (js-eval document
-             (format nil "RemoteDOM.registerTextNode(~D, ~S)"
-                     (register-node document node) text))
+             (format nil "RemoteDOM.registerTextNode(~D, ~D, ~S)"
+                     (register-node document node)
+                     (node-id document parent)
+                     text))
     node))
 
 (defun doc-prepend-child (document parent child)
