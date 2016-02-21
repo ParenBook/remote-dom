@@ -3,9 +3,15 @@
   (:use :cl)
   ;; Document
   (:export :document
+           :make-document
            :document-root
            :start
-           :stop)
+           :stop
+           :*document*
+           :make-node
+           :make-text-node
+           :append-child
+           :prepend-child)
   ;; DOM API
   (:documentation "The remote-dom package."))
 (in-package :remote-dom)
@@ -27,6 +33,10 @@
    (ids :initform (make-hash-table)
         :documentation "A map from Plump nodes to IDs."))
   (:documentation "The remote document."))
+
+(defun make-document ()
+  "Create a document object."
+  (make-instance 'document))
 
 (defmethod initialize-instance :after ((document document) &key)
   ;; Create the context object
@@ -120,7 +130,7 @@ found."
   (let ((node (plump-dom:make-element parent name :attributes attributes)))
     ;; Client-side
     (js-eval document
-             (format nil "RemoteDOM.registerNode(~D, ~A)"
+             (format nil "RemoteDOM.registerNode(~D, ~S)"
                      (register-node document node) name))
     node))
 
@@ -130,7 +140,7 @@ found."
   (let ((node (plump-dom:make-text-node parent text)))
     ;; Client-side
     (js-eval document
-             (format nil "RemoteDOM.registerTextNode(~D, ~A)"
+             (format nil "RemoteDOM.registerTextNode(~D, ~S)"
                      (register-node document node) text))
     node))
 
