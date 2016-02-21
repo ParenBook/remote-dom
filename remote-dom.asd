@@ -7,7 +7,7 @@
   :bug-tracker ""
   :source-control (:git "")
   :depends-on (:remote-js
-               :plump)
+               :plump-dom)
   :components ((:module "src"
                 :serial t
                 :components
